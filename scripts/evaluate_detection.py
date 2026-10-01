@@ -1,3 +1,5 @@
+import argparse
+
 import torch
 from sklearn.metrics import roc_auc_score
 from torch.utils.data import DataLoader
@@ -7,8 +9,12 @@ from src.models.backbone import PatchFeatureExtractor
 from src.models.memory_bank import score_batch
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--category", default="carpet")
+    args = parser.parse_args()
+
     device = "mps" if torch.backends.mps.is_available() else "cpu"
-    category = "carpet"
+    category = args.category
 
     memory_bank = torch.load(f"outputs/memory_bank_{category}.pt").to(device)
     dataset = MVTecDataset("data/raw", category, "test")

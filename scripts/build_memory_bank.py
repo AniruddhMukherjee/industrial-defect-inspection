@@ -1,4 +1,5 @@
 import time
+import argparse
 
 import torch
 
@@ -7,24 +8,27 @@ from src.models.backbone import PatchFeatureExtractor
 from src.models.memory_bank import collect_features, greedy_coreset
 
 def main():
-    device = "mps" if torch.backends.mps.is_available() else "cpu"
-    category = "carpet"
-    target_size = 2200
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--category", default="carpet")
+    parser.add_argument("--target-size", type=int, default=2200)
+    args = parser.parse_args()
 
-    dataset = MVTecDataset("data/raw", category, "train")
+    device = "mps" if torch.backends.mps.is_available() else "cpu"
+
+    dataset = MVTecDataset("data/raw", args.category, "train")
     extractor = PatchFeatureExtractor(device=device)
 
     print("collecting features...")
     features = collect_features(extractor, dataset)
     print("pool shape:", features.shape)
 
-    print(f"running coreset selection for {target_size} points...")
+    print(f"running coreset selection for {args.target_size} points...")
     start = time.time()
-    coreset, _ = greedy_coreset(features, target_size, device=device)
+    coreset, _ = greedy_coreset(features, args.target_size, device=device)
     elapsed = time.time() - start
     print(f"done in {elapsed:.1f}s, coreset shape: {coreset.shape}")
 
-    save_path = f"outputs/memory_bank_{category}.pt"
+    save_path = f"outputs/memory_bank_{args.category}.pt"
     torch.save(coreset, save_path)
     print("saved to", save_path)
 
