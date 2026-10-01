@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
+import torch.nn .functional as F
 
 @torch.no_grad()
 def collect_features(extractor, dataset, batch_size=8):
@@ -51,3 +52,9 @@ def score_batch(patch_features, memory_bank):
     image_scores = min_dists.max(dim=1).values # (B, )
 
     return image_scores, min_dists
+
+def make_heatmap(patch_min_dists, grid_size, image_size):
+    # patch_min_dists: (num_patches,) for ONE IMAGE
+    heatmap = patch_min_dists.reshape(1, 1, grid_size, grid_size)
+    heatmap = F.interpolate(heatmap, size=(image_size, image_size), mode="bilinear", align_corners=False)
+    return heatmap.squeeze() # (image_size, image_size)
