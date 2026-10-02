@@ -23,7 +23,11 @@ def main():
     extractor = PatchFeatureExtractor(device=device)
 
     # grab the first few DEFECTIVE samples (skip "good" ones, nothing to localize there) -- might fail idk
-    defective_indices = [i for i, s in enumerate(dataset.samples) if s[2] == 1][: args.num_samples]
+    seen_types = {}
+    for i, s in enumerate(dataset.samples):
+        if s[2] == 1:
+            seen_types.setdefault(s[3], i)
+    defective_indices = list(seen_types.values())[: args.num_samples]
 
     fig, axes = plt.subplots(len(defective_indices), 3, figsize=(9,3 * len(defective_indices)))
 
