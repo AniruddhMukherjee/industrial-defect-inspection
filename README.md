@@ -2,7 +2,7 @@
 
 An anomaly detection and localization system for industrial visual quality inspection, built on the **MVTec AD** benchmark — the standard academic/industrial dataset for this problem, created by a German industrial imaging company. The system flags defective products and shows *where* the defect is, trained using only defect-free images, mirroring how real manufacturing QA actually works: defects are rare and varied, so you can never collect enough labeled examples of every possible flaw.
 
-**Live demo:** [https://industrial-image-defect-inspection.streamlit.app)]
+**Live demo:** [industrial-image-defect-inspection.streamlit.app](https://industrial-image-defect-inspection.streamlit.app)
 
 ![Carpet heatmap example](outputs/heatmap_carpet.png)
 
