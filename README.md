@@ -135,6 +135,11 @@ python -m scripts.build_memory_bank --category wood
 python -m scripts.finalize_category --category carpet
 python -m scripts.finalize_category --category bottle
 python -m scripts.finalize_category --category wood
+
+# visualize a heat map with random images from the test set and access it in outputs (not a necessary step, just to confirm the heat maps are true)
+python -m scripts.visualize_heatmap --category carpet --num-samples 5
+python -m scripts.visualize_heatmap --category bottle --num-samples 5
+python -m scripts.visualize_heatmap --category wood --num-samples 5
 ```
 
 Finally, launch the dashboard — it reads `outputs/category_config.json` directly, so all three categories appear in the dropdown automatically, with no further setup:
