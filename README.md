@@ -64,3 +64,52 @@ Per-category thresholds were calibrated as the midpoint between the highest "goo
 | bottle   | 4.3088    |
 
 ## Repository structure
+industrial-defect-inspection/
+src/
+data/dataset.py # MVTec-style dataset loader (train/test, image+mask pairing)
+models/
+backbone.py # Frozen WideResNet-50 patch feature extractor
+memory_bank.py # Feature collection, coreset selection, scoring, heatmap generation
+autoencoder.py # Comparison baseline
+eval/visualize.py # Sanity-check and overlay visualization helpers
+scripts/ # Every pipeline step as a runnable, reproducible entry point
+app/streamlit_app.py # Interactive demo: upload image -> score + heatmap
+outputs/ # Generated artifacts (memory banks, sanity checks, heatmaps)
+data/raw/ # MVTec AD category folders (not tracked in git — see Setup)
+
+
+## Setup and reproduction
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Download `carpet` and `bottle` from the [official MVTec AD page](https://www.mvtec.com/company/research/datasets/mvtec-ad/downloads) and extract into `data/raw/`, so you have `data/raw/carpet/` and `data/raw/bottle/`.
+
+Then, in order:
+
+```bash
+# build the memory bank for each category (~3-4 min each on Apple Silicon MPS)
+python -m scripts.build_memory_bank --category carpet
+python -m scripts.build_memory_bank --category bottle
+
+# evaluate detection and localization
+python -m scripts.evaluate_detection --category carpet
+python -m scripts.evaluate_localization --category carpet
+# (repeat with --category bottle)
+
+# run the interactive demo
+streamlit run app/streamlit_app.py
+```
+
+All intermediate scripts (`check_*.py`, `inspect_score_distribution.py`, `visualize_heatmap.py`, etc.) are standalone, documented entry points under `scripts/` for inspecting each stage of the pipeline individually.
+
+## Limitations
+
+- **Fixed photographic conditions.** Like any real inspection-camera setup, this system is specialized to consistent lighting, framing, and background matching its training images. It is not a general-purpose, any-photo defect detector — this is by design, matching how real factory inspection stations work (one fixed camera per product line), not a shortcoming unique to this implementation.
+- **Localization resolution is coarse.** The 28×28 patch grid, upsampled to image resolution, cannot produce pixel-precise boundaries — defect *location* is reliable, but boundary shape is approximate, which is reflected in the IoU numbers above.
+- **Threshold calibration requires some labeled defective examples.** The reported thresholds were validated against MVTec AD's labeled test set. A genuinely new deployment with zero defective examples available would need to start with a conservative, normal-data-only threshold and refine it from live production feedback over time.
+- **Two categories evaluated**, chosen to represent texture and object defect types respectively; results on the other 13 MVTec AD categories are not yet measured.
+- Dataset is licensed CC BY-NC-SA 4.0 — non-commercial use only.
