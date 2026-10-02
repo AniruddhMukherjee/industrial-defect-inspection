@@ -9,12 +9,13 @@ IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
 class MVTecDataset(Dataset):
-    def __init__(self, root, category, split="train", resize = 256, crop=224):
+    def __init__(self, root, category, split="train", resize = 256, crop=224, normalize=True):
         assert split in ("train", "test")
         self.root = Path(root) / category
         self.split = split
         self.resize = resize
         self.crop = crop
+        self.normalize = normalize
         self.samples = self._collect()
 
     def _collect(self):
@@ -41,7 +42,9 @@ class MVTecDataset(Dataset):
         img = Image.open(img_path).convert("RGB")
         img = TF.resize(img, self.resize)
         img = TF.center_crop(img, self.crop)
-        img = TF.normalize(TF.to_tensor(img), IMAGENET_MEAN, IMAGENET_STD)
+        img = TF.to_tensor(img)
+        if self.normalize:
+            img = TF.normalize(img, IMAGENET_MEAN, IMAGENET_STD)
 
         if mask_path is None:
             mask = torch.zeros(1, self.crop, self.crop)
