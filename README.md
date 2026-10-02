@@ -64,18 +64,21 @@ Per-category thresholds were calibrated as the midpoint between the highest "goo
 | bottle   | 4.3088    |
 
 ## Repository structure
+
+```
 industrial-defect-inspection/
-src/
-data/dataset.py # MVTec-style dataset loader (train/test, image+mask pairing)
-models/
-backbone.py # Frozen WideResNet-50 patch feature extractor
-memory_bank.py # Feature collection, coreset selection, scoring, heatmap generation
-autoencoder.py # Comparison baseline
-eval/visualize.py # Sanity-check and overlay visualization helpers
-scripts/ # Every pipeline step as a runnable, reproducible entry point
-app/streamlit_app.py # Interactive demo: upload image -> score + heatmap
-outputs/ # Generated artifacts (memory banks, sanity checks, heatmaps)
-data/raw/ # MVTec AD category folders (not tracked in git — see Setup)
+  src/
+    data/dataset.py        # MVTec-style dataset loader (train/test, image+mask pairing)
+    models/
+      backbone.py          # Frozen WideResNet-50 patch feature extractor
+      memory_bank.py        # Feature collection, coreset selection, scoring, heatmap generation
+      autoencoder.py         # Comparison baseline
+    eval/visualize.py         # Sanity-check and overlay visualization helpers
+  scripts/                     # Every pipeline step as a runnable, reproducible entry point
+  app/streamlit_app.py           # Interactive demo: upload image -> score + heatmap
+  outputs/                        # Generated artifacts (memory banks, sanity checks, heatmaps)
+  data/raw/                        # MVTec AD category folders (not tracked in git — see Setup)
+```
 
 
 ## Setup and reproduction
