@@ -3,27 +3,25 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import streamlit as st
-import torch
+import json
+
 import matplotlib.pyplot as plt
 import numpy as np
+import streamlit as st
+import torch
 import torchvision.transforms.functional as TF
 from PIL import Image
 
-ANOMALY_THRESHOLDS = {
-    "carpet": 3.806,
-    "bottle": 4.3088,
-} 
-
 from src.models.backbone import PatchFeatureExtractor
-from src.models.memory_bank import score_batch, make_heatmap
+from src.models.memory_bank import make_heatmap, score_batch
 
 st.set_page_config(page_title="Industrial Defect Inspection", layout="centered")
-st.title("Automated Visual Defect Inspection")
-st.caption("PatchCore-style anomaly detection on MVTec AD (carpet, bottle)")
 
-category = st.selectbox("Product category", ["carpet", "bottle"])
-uploaded_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+
+@st.cache_data
+def load_config():
+    with open("outputs/category_config.json") as f:
+        return json.load(f)
 
 
 @st.cache_resource
@@ -33,14 +31,38 @@ def load_backbone():
 
 
 @st.cache_resource
-def load_memory_bank(category, _device):
-    return torch.load(f"outputs/memory_bank_{category}.pt", map_location="cpu").to(_device)
+def load_memory_bank(bank_path, _device):
+    return torch.load(bank_path, map_location="cpu").to(_device)
 
+
+config = load_config()
+
+st.title("Automated Visual Defect Inspection")
+st.caption("PatchCore-style anomaly detection on MVTec AD")
+
+category = st.selectbox("Product category", list(config.keys()))
+cat_info = config[category]
+
+with st.sidebar:
+    st.header(f"{category.capitalize()} — model stats")
+
+    st.subheader("Performance")
+    st.metric("Image AUROC", cat_info["image_auroc"])
+    st.metric("Pixel AUROC", cat_info["pixel_auroc"])
+    st.metric("Best IoU", cat_info["best_iou"])
+
+    st.subheader("Dataset")
+    st.write(f"Train images: {cat_info['num_train_images']}")
+    st.write(f"Test images: {cat_info['num_test_images']}")
+
+    st.subheader("Decision threshold")
+    st.write(f"{cat_info['threshold']}")
 
 extractor, device = load_backbone()
-memory_bank = load_memory_bank(category, device)
+memory_bank = load_memory_bank(cat_info["memory_bank_path"], device)
+threshold = cat_info["threshold"]
 
-st.write(f"Loaded memory bank for **{category}**: {memory_bank.shape[0]} reference patches on `{device}`")
+uploaded_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
@@ -73,7 +95,7 @@ if uploaded_file is not None:
     score = scores.item()
     st.metric("Anomaly score", f"{score:.4f}")
 
-    if score > ANOMALY_THRESHOLDS[category]:
-        st.error(f"⚠️ Flagged as DEFECTIVE (threshold: {ANOMALY_THRESHOLDS[category]})")
+    if score > threshold:
+        st.error(f"⚠️ Flagged as DEFECTIVE (threshold: {threshold})")
     else:
-        st.success(f"✅ Passed as NORMAL (threshold: {ANOMALY_THRESHOLDS[category]})")
+        st.success(f"✅ Passed as NORMAL (threshold: {threshold})")
