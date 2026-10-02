@@ -34,7 +34,7 @@ def load_backbone():
 
 @st.cache_resource
 def load_memory_bank(category, _device):
-    return torch.load(f"outputs/memory_bank_{category}.pt").to(_device)
+    return torch.load(f"outputs/memory_bank_{category}.pt", map_location="cpu").to(_device)
 
 
 extractor, device = load_backbone()
