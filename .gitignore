@@ -7,3 +7,4 @@ __pycache__/
 outputs/*.pt
 !outputs/memory_bank_carpet.pt
 !outputs/memory_bank_bottle.pt
+!outputs/memory_bank_wood.pt

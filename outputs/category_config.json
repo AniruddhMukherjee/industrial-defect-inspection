@@ -1,0 +1,35 @@
+{
+  "carpet": {
+    "num_train_images": 280,
+    "num_test_images": 117,
+    "memory_bank_path": "outputs/memory_bank_carpet.pt",
+    "image_auroc": 0.998,
+    "pixel_auroc": 0.9893,
+    "best_iou": 0.4753,
+    "good_score_max": 3.892,
+    "defective_score_min": 3.7201,
+    "threshold": 3.806
+  },
+  "bottle": {
+    "num_train_images": 209,
+    "num_test_images": 83,
+    "memory_bank_path": "outputs/memory_bank_bottle.pt",
+    "image_auroc": 0.9992,
+    "pixel_auroc": 0.9802,
+    "best_iou": 0.6014,
+    "good_score_max": 4.377,
+    "defective_score_min": 4.2406,
+    "threshold": 4.3088
+  },
+  "wood": {
+    "num_train_images": 247,
+    "num_test_images": 79,
+    "memory_bank_path": "outputs/memory_bank_wood.pt",
+    "image_auroc": 0.9877,
+    "pixel_auroc": 0.9483,
+    "best_iou": 0.3391,
+    "good_score_max": 4.5156,
+    "defective_score_min": 3.8701,
+    "threshold": 4.1929
+  }
+}
