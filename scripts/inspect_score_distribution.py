@@ -15,7 +15,7 @@ def main():
     args = parser.parse_args()
 
     device = "mps" if torch.backends.mps.is_available() else "cpu"
-    memory_bank = torch.load(f"outputs/memory_bank_{args.category}.pt").to(device)
+    memory_bank = torch.load(f"outputs/memory_bank_{args.category}.pt", map_location="cpu").to(device)
     dataset = MVTecDataset("data/raw", args.category, "test")
     extractor = PatchFeatureExtractor(device=device)
     loader = DataLoader(dataset, batch_size=8, shuffle=False)
