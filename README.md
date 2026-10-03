@@ -218,7 +218,7 @@ The pipeline is fully data-driven — adding a new MVTec AD category (or any dat
 ## 📈 Dashboard Features
 
 - **Category Selection**: Switch between carpet, bottle, and wood — each with its own calibrated memory bank and threshold
-- **Live Scoring**: Upload any image, get an anomaly score computed in real time (nothing precomputed per-image)
+- **Live Scoring**: Upload any image, get an anomaly score computed on-demand (nothing precomputed per-image)
 - **Localization Heatmap**: See exactly where the model thinks the defect is, overlaid on the uploaded image
 - **Model Stats Sidebar**: AUROC, pixel-AUROC, IoU, dataset size, and threshold for the selected category, read live from `category_config.json`
 
