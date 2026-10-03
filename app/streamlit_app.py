@@ -91,11 +91,22 @@ if uploaded_file is not None:
         ax.imshow(heatmap, cmap="jet", alpha=0.5)
         ax.axis("off")
         st.pyplot(fig)
+        st.caption("Model-generated anomaly heatmap — red/warm areas indicate regions least similar to normal training examples.")
 
     score = scores.item()
     st.metric("Anomaly score", f"{score:.4f}")
+    st.caption(
+        "Distance from this image's patches to the nearest match in the category's "
+        "reference memory bank (built from defect-free training images). Higher = less "
+        "similar to anything seen as normal."
+    )
 
     if score > threshold:
         st.error(f"⚠️ Flagged as DEFECTIVE (threshold: {threshold})")
     else:
         st.success(f"✅ Passed as NORMAL (threshold: {threshold})")
+    st.caption(
+        f"Threshold ({threshold}) is calibrated per category as the midpoint between the "
+        "highest score seen on a known-normal test image and the lowest score seen on a "
+        "known-defective one."
+    )
