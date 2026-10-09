@@ -74,6 +74,8 @@ This project evaluates three categories, chosen to show the approach generalizes
 | bottle | object | 209 | 83 |
 | wood | texture | 247 | 79 |
 
+**Bundled sample images:** the `samples/` folder contains a few resized (256 px) copies of MVTec AD test images per category, so the live demo can be tried without downloading the dataset. They remain under the original **CC BY-NC-SA 4.0** license (© MVTec Software GmbH, non-commercial use, share-alike) and are included for demonstration only.
+
 ---
 
 ## 🏗️ Project Architecture
@@ -94,16 +96,22 @@ industrial-defect-inspection/
 ├── scripts/
 │   ├── build_memory_bank.py      ← build + save a category's memory bank (auto-manages .gitignore)
 │   ├── finalize_category.py      ← compute AUROC/IoU/threshold → category_config.json
+│   ├── export_samples.py         ← export a few resized test images per category → samples/
 │   ├── visualize_heatmap.py      ← one-example-per-defect-type heatmap visualization
 │   └── ...                       ← every other pipeline step as a runnable, documented entry point
 ├── app/
-│   └── streamlit_app.py          ← live dashboard: category select, upload → score + heatmap
+│   └── streamlit_app.py          ← live dashboard: category select, upload or sample → score + heatmap
+├── samples/
+│   └── <category>/               ← bundled demo images (normal + one per defect type)
 ├── outputs/
 │   ├── category_config.json      ← single source of truth: metrics + threshold per category
 │   ├── memory_bank_<category>.pt ← saved coresets (committed — needed for the deployed demo)
 │   └── heatmap_<category>.png    ← example localization visuals
+├── industrial-defect-inspection.code-workspace  ← VS Code workspace (opens the project with the .venv interpreter)
 └── requirements.txt
 ```
+
+---
 
 ---
 
@@ -170,57 +178,81 @@ python -m scripts.finalize_category --category carpet
 python -m scripts.finalize_category --category bottle
 python -m scripts.finalize_category --category wood
 
-# visualize a heat map with random images from the test set and access it in outputs (not a necessary step, just to confirm the heat maps are true)
+# export a few demo images per category to samples/ (optional: the repo already ships them)
+python -m scripts.export_samples --category carpet
+python -m scripts.export_samples --category bottle
+python -m scripts.export_samples --category wood
+
+# visualize heatmaps with one example per defect type, saved to outputs/ (optional sanity check)
 python -m scripts.visualize_heatmap --category carpet --num-samples 5
 python -m scripts.visualize_heatmap --category bottle --num-samples 5
 python -m scripts.visualize_heatmap --category wood --num-samples 5
 ```
 
-Finally, launch the dashboard — it reads `outputs/category_config.json` directly, so all three categories appear in the dropdown automatically:
+Finally, launch the dashboard. It reads `outputs/category_config.json` directly, so all three categories appear in the dropdown automatically:
 
 ```bash
 streamlit run app/streamlit_app.py
 ```
 
+If you use VS Code, open `industrial-defect-inspection.code-workspace` to reopen the whole project with the `.venv` interpreter already selected.
+
 All intermediate/diagnostic scripts (`check_*.py`, `sanity_check.py`, `visualize_heatmap.py`, `evaluate_detection.py`, `evaluate_localization.py`, etc.) are standalone, documented entry points under `scripts/` for inspecting each stage of the pipeline individually; they are not required for the steps above.
 
 ---
 
+
 ## ➕ Adding a New Category
 
-The pipeline is fully data-driven — adding a new MVTec AD category (or any dataset following the same `train/test/ground_truth` folder structure) requires **no code changes**, only running the existing scripts against the new category name. This was validated directly while building this project: **wood** was added this way, after carpet and bottle were already working.
+The pipeline is fully data-driven. Adding a new MVTec AD category (or any dataset following the same `train/test/ground_truth` folder structure) requires **no code changes**, only running the existing scripts against the new category name. This was validated directly while building this project: **wood** was added this way, after carpet and bottle were already working.
 
 1. **Download and extract** the category into `data/raw/<category>/`:
+
 ```bash
-   mv ~/Downloads/<category>.tar.xz data/raw/
-   cd data/raw && tar -xf <category>.tar.xz && cd ../..
+mv ~/Downloads/<category>.tar.xz data/raw/
+cd data/raw && tar -xf <category>.tar.xz && cd ../..
 ```
 
-2. **Build its memory bank** — this also automatically adds the required `.gitignore` exception for the new category's saved bank, so it isn't silently excluded from version control:
+2. **Build its memory bank.** This also adds the required `.gitignore` exception for the new category's saved bank automatically, so it isn't silently excluded from version control:
+
 ```bash
-   python -m scripts.build_memory_bank --category <category>
+python -m scripts.build_memory_bank --category <category>
 ```
 
-3. **Compute its metrics and threshold** — appends a new entry to `outputs/category_config.json` alongside any existing categories, without overwriting them:
+3. **Compute its metrics and threshold.** This appends a new entry to `outputs/category_config.json` alongside any existing categories, without overwriting them:
+
 ```bash
-   python -m scripts.finalize_category --category <category>
+python -m scripts.finalize_category --category <category>
 ```
 
-4. **Run the dashboard** — the new category appears in the dropdown automatically, since the app reads its list of categories directly from `category_config.json`:
+4. **Export demo images.** This saves a few resized test images (2 normal, 1 per defect type) to `samples/<category>/`, which the dashboard lists in its sample picker:
+
 ```bash
-   streamlit run app/streamlit_app.py
+python -m scripts.export_samples --category <category>
 ```
 
-**One manual judgment call, by design:** `build_memory_bank.py`'s `--target-size` (default 2200) controls the coreset size and may be worth tuning per category — a texture category and a highly complex object category don't necessarily warrant the same reference-bank size. If a new category's AUROC comes out lower than expected, this is the first parameter to revisit rather than something to auto-tune blindly.
+5. **Run the dashboard.** The new category appears in the dropdown, and its samples in the sample picker, automatically, since the app reads both from `category_config.json` and the `samples/` folder:
+
+```bash
+streamlit run app/streamlit_app.py
+```
+
+To publish the new category on the deployed demo, commit `outputs/category_config.json`, `outputs/memory_bank_<category>.pt`, and `samples/<category>/`; Streamlit Community Cloud redeploys on push.
+
+**One manual judgment call, by design:** `build_memory_bank.py`'s `--target-size` (default 2200) controls the coreset size and may be worth tuning per category. A texture category and a highly complex object category don't necessarily warrant the same reference-bank size. If a new category's AUROC comes out lower than expected, this is the first parameter to revisit rather than something to auto-tune blindly.
 
 ---
 
 ## 📈 Dashboard Features
 
-- **Category Selection**: Switch between carpet, bottle, and wood — each with its own calibrated memory bank and threshold
-- **Live Scoring**: Upload any image, get an anomaly score computed on-demand (nothing precomputed per-image)
-- **Localization Heatmap**: See exactly where the model thinks the defect is, overlaid on the uploaded image
+- **Category Selection**: Switch between carpet, bottle, and wood, each with its own calibrated memory bank and threshold
+- **Sample Picker**: Don't have a matching photo? Pick a bundled MVTec AD test image (normal or defective) from a dropdown. The app shows its known ground truth, so you can check the verdict yourself
+- **Live Scoring**: Upload an image, or pick a sample, and get an anomaly score computed on-demand (nothing precomputed per-image)
+- **Localization Heatmap**: See where the model thinks the defect is, overlaid on the image, with a caption explaining the colors
+- **Score and Threshold Explanation**: The UI explains what the anomaly score means and how the category's threshold was calibrated
 - **Model Stats Sidebar**: AUROC, pixel-AUROC, IoU, dataset size, and threshold for the selected category, read live from `category_config.json`
+
+> The model only knows the photographic setup of MVTec AD (fixed lighting, framing, background). Random web photos of carpet, bottles, or wood will usually be flagged as anomalous, which is why the sample picker exists. See Limitations.
 
 ---
 
@@ -245,6 +277,7 @@ The pipeline is fully data-driven — adding a new MVTec AD category (or any dat
 - **Threshold calibration requires some labeled defective examples.** The reported thresholds were validated against MVTec AD's labeled test set. A genuinely new deployment with zero defective examples available would need to start with a conservative, normal-data-only threshold and refine it from live production feedback over time.
 - **Three of fifteen MVTec AD categories evaluated**, chosen to represent texture and object defect types; the pipeline generalizes to the remaining categories via the same steps (see "Adding a New Category"), but their specific results are not yet measured.
 - Dataset is licensed CC BY-NC-SA 4.0 — non-commercial use only.
+- **Fixed photographic conditions.** Like any real inspection-camera setup, this system is specialized to consistent lighting, framing, and background matching its training images. Testing a web-sourced carpet photo confirmed this: it was flagged anomalous despite having no real defect, simply due to different lighting/camera/fiber characteristics than MVTec AD's own photos. This is by design, matching how real factory inspection stations work (one fixed camera per product line), and it is why the demo ships bundled sample images instead of expecting arbitrary uploads.
 
 ---
 
