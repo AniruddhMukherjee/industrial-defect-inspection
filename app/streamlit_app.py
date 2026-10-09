@@ -64,8 +64,26 @@ threshold = cat_info["threshold"]
 
 uploaded_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
-if uploaded_file is not None:
-    image = Image.open(uploaded_file).convert("RGB")
+sample_dir = Path("samples") / category
+sample_files = sorted(sample_dir.glob("*.png")) if sample_dir.exists() else []
+sample_choice = None
+if sample_files:
+    sample_choice = st.selectbox(
+        "...or try a sample image from the MVTec AD test set",
+        [None] + sample_files,
+        format_func=lambda p: "— none —" if p is None else p.stem.replace("_", " "),
+    )
+    st.caption("Sample images: MVTec AD (MVTec Software GmbH), licensed CC BY-NC-SA 4.0 (non-commercial use).")
+
+source = uploaded_file if uploaded_file is not None else sample_choice
+
+if source is not None:
+    image = Image.open(source).convert("RGB")
+
+    if uploaded_file is None:
+        defect = sample_choice.stem.rsplit("_", 1)[0].replace("_", " ")
+        truth = "normal (defect-free)" if defect == "good" else f"defective ({defect})"
+        st.caption(f"Known ground truth for this sample: **{truth}**")
 
     img_tensor = TF.resize(image, 256)
     img_tensor = TF.center_crop(img_tensor, 224)
